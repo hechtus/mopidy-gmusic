@@ -230,7 +230,10 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         return album
 
     def _to_mopidy_artist(self, song):
-        name = song['artist']
+        try:
+            name = song['artist']
+        except KeyError:
+            name = 'Unknown Artist'
         uri = 'gmusic:artist:' + self._create_id(name)
         artist = Artist(
             uri=uri,
