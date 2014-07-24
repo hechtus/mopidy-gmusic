@@ -5,7 +5,7 @@ install:
   - "sudo wget -O /etc/apt/sources.list.d/mopidy.list http://apt.mopidy.com/mopidy.list"
   - "sudo apt-get update || true"
   - "sudo apt-get install mopidy"
-  - "pip install coveralls flake8 mopidy==dev gmusicapi"
+  - "pip install coveralls flake8 mopidy gmusicapi"
 
 before_script:
   - "rm $VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/no-global-site-packages.txt"
