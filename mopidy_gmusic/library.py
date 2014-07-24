@@ -24,12 +24,16 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         else:
             return []
 
-    def _lookup_track(self, uri):        
+    def _lookup_track(self, uri):
         is_all_access = uri.startswith('gmusic:track:T')
-        
+
         if is_all_access and self.all_access:
             song = self.backend.session.get_track_info(uri.split(':')[2])
             if song is None:
+                logger.debug('There is no song %r', uri)
+                return []
+            if not 'artistId' in song:
+                logger.debug('Failed to lookup %r', uri)
                 return []
             return [self._aa_to_mopidy_track(song)]
         elif not is_all_access:
@@ -66,7 +70,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             logger.debug('Failed to lookup %r', uri)
             return []
 
-    def _lookup_artist(self, uri):        
+    def _lookup_artist(self, uri):
         sorter = lambda t: (t.album.date,
                             t.album.name,
                             t.disc_no,
@@ -120,7 +124,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                             albums=lib_albums)
 
     def find_exact(self, query=None, uris=None):
-        # Find exact can only be done on gmusic library, 
+        # Find exact can only be done on gmusic library,
         # since one can't filter all access searches
         lib_tracks, lib_artists, lib_albums = self._search_library(query, uris)
 

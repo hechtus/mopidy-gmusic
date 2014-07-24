@@ -119,3 +119,15 @@ class GMusicSession(object):
                 return self.api.search_all_access(query, max_results)
             except CallFailure as error:
                 logger.error(u'Failed to search All Access: %s', error)
+
+    def get_all_stations(self):
+        if self.api.is_authenticated():
+            return self.api.get_all_stations()
+        else:
+            return {}
+
+    def get_station_tracks(self, station_id, num_tracks=25):
+        if self.api.is_authenticated():
+            return self.api.get_station_tracks(station_id, num_tracks)
+        else:
+            return {}
