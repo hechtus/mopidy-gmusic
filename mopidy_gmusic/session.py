@@ -145,3 +145,19 @@ class GMusicSession(object):
             return api_track['trackId']
         logger.debug('Skip track: no id %s', str(api_track))
         return None
+
+    # try to get a reasonable Ref name for clients
+    # which do not request a lookup themself
+    @staticmethod
+    def get_ref_name(api_track):
+        title = api_track['title'] if 'title' in api_track else None
+        artist = api_track['artist'] if 'artist' in api_track else None
+        if title and artist:
+            name = artist + ' - ' + title
+        elif title:
+            name = title
+        elif artist:
+            name = artist
+        else:
+            name = 'unknown track'
+        return name

@@ -64,9 +64,13 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             # create Ref objects
             refs = []
             for track in tracks:
-                # track name will be replaced later by mopidy running a lookup
-                refs.append(Ref.track(uri='gmusic:track:' + GMusicSession.get_track_id(track),
-                                      name=''))
+                # some clients request a lookup themself, some don't
+                # we do not want to ask the API for every track twice
+                # we'll fetch some sane information directly from provided object
+                track_id = GMusicSession.get_track_id(track)
+                track_name = GMusicSession.get_ref_name(track)
+                refs.append(Ref.track(uri='gmusic:track:' + track_id,
+                                      name=track_name))
             return refs
 
         return []
