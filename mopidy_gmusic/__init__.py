@@ -24,6 +24,8 @@ class GMusicExtension(ext.Extension):
         schema['password'] = config.Secret()
         schema['deviceid'] = config.String(optional=True)
         schema['all_access'] = config.String(optional=True)
+        schema['max_radio_stations'] = config.Integer(minimum=0, optional=True)
+        schema['max_radio_tracks'] = config.Integer(minimum=0, optional=True)
         return schema
 
     def setup(self, registry):

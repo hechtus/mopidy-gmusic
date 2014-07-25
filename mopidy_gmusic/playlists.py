@@ -43,7 +43,6 @@ class GMusicPlaylistsProvider(backend.PlaylistsProvider):
                 tracks += track
         return self._create_playlist_with_tracks(tracks, name, id, uri)
 
-
     def _create_thumbs_up_playlist(self):
         return self._create_playlist(
                             self.backend.session.get_thumbs_up_songs(),
@@ -51,17 +50,24 @@ class GMusicPlaylistsProvider(backend.PlaylistsProvider):
                             'thumbs_up',
                             'gmusic:playlist:thumbs_up')
 
-    def _create_playlist_from_station(self, station):
+    def _create_playlist_from_station(self, station, max_radio_tracks):
         station_id = station['id']
         station_name = 'radio/ ' + station['name']
         station_uri = 'gmusic:playlist:station-' + station_id
-        station_tracks = self.backend.session.get_station_tracks(station_id)
+        station_tracks = self.backend.session.get_station_tracks(station_id, max_radio_tracks)
         return self._create_playlist(station_tracks,
                                       station_name,
                                       station_id,
                                       station_uri)
 
     def _get_all_stations(self):
+      max_radio_stations = self.backend.config['gmusic']['max_radio_stations']
+      max_radio_tracks = self.backend.config['gmusic']['max_radio_tracks']
+      logger.debug('load max %d radios with %d tracks', max_radio_stations, max_radio_tracks)
+      if max_radio_stations <= 0:
+          return []
+      if max_radio_tracks <= 0:
+          return []
       playlists = []
       stations = self.backend.session.get_all_stations()
       stations.reverse()
@@ -69,8 +75,9 @@ class GMusicPlaylistsProvider(backend.PlaylistsProvider):
       ifl['id'] = 'IFL'
       ifl['name'] = 'I\'m Feeling Lucky'
       stations.insert(0, ifl)
+      stations = stations[:max_radio_stations]
       for station in stations:
-          playlist = self._create_playlist_from_station(station)
+          playlist = self._create_playlist_from_station(station, max_radio_tracks)
           if playlist:
               playlists.append(playlist)
           else:
