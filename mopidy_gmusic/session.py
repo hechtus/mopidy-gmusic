@@ -131,3 +131,17 @@ class GMusicSession(object):
             return self.api.get_station_tracks(station_id, num_tracks)
         else:
             return {}
+
+    # try to get a valid id for a track fetched from api
+    @staticmethod
+    def get_track_id(api_track):
+        if 'id' in api_track:
+            return api_track['id']
+        elif 'nid' in api_track:
+            return api_track['nid']
+        elif 'storeId' in api_track:
+            return api_track['storeId']
+        elif 'trackId' in api_track:
+            return api_track['trackId']
+        logger.debug('Skip track: no id %s', str(api_track))
+        return None

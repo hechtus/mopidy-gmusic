@@ -4,15 +4,72 @@ import logging
 import hashlib
 
 from mopidy import backend
-from mopidy.models import Artist, Album, Track, SearchResult
+from mopidy.models import Artist, Album, Ref, Track, SearchResult
+
+from .session import GMusicSession
 
 logger = logging.getLogger(__name__)
 
 
 class GMusicLibraryProvider(backend.LibraryProvider):
+    root_directory = Ref.directory(uri='gmusic:directory', name='Google Music')
+
+    def __init__(self, *args, **kwargs):
+        super(GMusicLibraryProvider, self).__init__(*args, **kwargs)
+        self._max_radio_stations = self.backend.config['gmusic']['max_radio_stations']
+        self._max_radio_tracks = self.backend.config['gmusic']['max_radio_tracks']
+        self._root = []
+        if self._max_radio_stations >= 0 and self._max_radio_tracks > 0:
+            # max_radio_stations < 0 -> disable radios
+            # max_top_tracks <= 0 -> disable radios
+            self._root.append(Ref.directory(uri='gmusic:radio',
+                                            name='Radios'))
 
     def set_all_access(self, all_access):
         self.all_access = all_access
+
+    def browse(self, uri):
+        logger.debug('browse: %s', str(uri))
+        if not uri:
+            return []
+        if uri == self.root_directory.uri:
+            return self._root
+
+        parts = uri.split(':')
+
+        # all radio stations
+        # uri == 'gmusic:radio'
+        if len(parts) == 2 and parts[1] == 'radio':
+            stations = self.backend.session.get_all_stations()
+            stations.reverse()
+            ifl = {}
+            ifl['id'] = 'IFL'
+            ifl['name'] = 'I\'m Feeling Lucky'
+            stations.insert(0, ifl)
+            if self._max_radio_stations > 0:
+                # limit radio stations
+                stations = stations[:self._max_radio_stations]
+            # create Ref objects
+            refs = []
+            for station in stations:
+                refs.append(Ref.directory(uri='gmusic:radio:' + station['id'],
+                                      name=station['name']))
+            return refs
+
+        # a single radio station
+        # uri == 'gmusic:radio:station_id'
+        if len(parts) == 3 and parts[1] == 'radio':
+            station_id = parts[2]
+            tracks = self.backend.session.get_station_tracks(station_id, self._max_radio_tracks)
+            # create Ref objects
+            refs = []
+            for track in tracks:
+                # track name will be replaced later by mopidy running a lookup
+                refs.append(Ref.track(uri='gmusic:track:' + GMusicSession.get_track_id(track),
+                                      name=''))
+            return refs
+
+        return []
 
     def lookup(self, uri):
         if uri.startswith('gmusic:track:'):
