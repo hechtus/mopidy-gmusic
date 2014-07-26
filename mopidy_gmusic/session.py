@@ -119,3 +119,45 @@ class GMusicSession(object):
                 return self.api.search_all_access(query, max_results)
             except CallFailure as error:
                 logger.error(u'Failed to search All Access: %s', error)
+
+    def get_all_stations(self):
+        if self.api.is_authenticated():
+            return self.api.get_all_stations()
+        else:
+            return {}
+
+    def get_station_tracks(self, station_id, num_tracks=25):
+        if self.api.is_authenticated():
+            return self.api.get_station_tracks(station_id, num_tracks)
+        else:
+            return {}
+
+    # try to get a valid id for a track fetched from api
+    @staticmethod
+    def get_track_id(api_track):
+        if 'id' in api_track:
+            return api_track['id']
+        elif 'nid' in api_track:
+            return api_track['nid']
+        elif 'storeId' in api_track:
+            return api_track['storeId']
+        elif 'trackId' in api_track:
+            return api_track['trackId']
+        logger.debug('Skip track: no id %s', str(api_track))
+        return None
+
+    # try to get a reasonable Ref name for clients
+    # which do not request a lookup themself
+    @staticmethod
+    def get_ref_name(api_track):
+        title = api_track['title'] if 'title' in api_track else None
+        artist = api_track['artist'] if 'artist' in api_track else None
+        if title and artist:
+            name = artist + ' - ' + title
+        elif title:
+            name = title
+        elif artist:
+            name = artist
+        else:
+            name = 'unknown track'
+        return name

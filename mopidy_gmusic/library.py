@@ -4,15 +4,76 @@ import logging
 import hashlib
 
 from mopidy import backend
-from mopidy.models import Artist, Album, Track, SearchResult
+from mopidy.models import Artist, Album, Ref, Track, SearchResult
+
+from .session import GMusicSession
 
 logger = logging.getLogger(__name__)
 
 
 class GMusicLibraryProvider(backend.LibraryProvider):
+    root_directory = Ref.directory(uri='gmusic:directory', name='Google Music')
+
+    def __init__(self, *args, **kwargs):
+        super(GMusicLibraryProvider, self).__init__(*args, **kwargs)
+        self._max_radio_stations = self.backend.config['gmusic']['max_radio_stations']
+        self._max_radio_tracks = self.backend.config['gmusic']['max_radio_tracks']
+        self._root = []
+        if self._max_radio_stations >= 0 and self._max_radio_tracks > 0:
+            # max_radio_stations < 0 -> disable radios
+            # max_top_tracks <= 0 -> disable radios
+            self._root.append(Ref.directory(uri='gmusic:radio',
+                                            name='Radios'))
 
     def set_all_access(self, all_access):
         self.all_access = all_access
+
+    def browse(self, uri):
+        logger.debug('browse: %s', str(uri))
+        if not uri:
+            return []
+        if uri == self.root_directory.uri:
+            return self._root
+
+        parts = uri.split(':')
+
+        # all radio stations
+        # uri == 'gmusic:radio'
+        if len(parts) == 2 and parts[1] == 'radio':
+            stations = self.backend.session.get_all_stations()
+            stations.reverse()
+            ifl = {}
+            ifl['id'] = 'IFL'
+            ifl['name'] = 'I\'m Feeling Lucky'
+            stations.insert(0, ifl)
+            if self._max_radio_stations > 0:
+                # limit radio stations
+                stations = stations[:self._max_radio_stations]
+            # create Ref objects
+            refs = []
+            for station in stations:
+                refs.append(Ref.directory(uri='gmusic:radio:' + station['id'],
+                                      name=station['name']))
+            return refs
+
+        # a single radio station
+        # uri == 'gmusic:radio:station_id'
+        if len(parts) == 3 and parts[1] == 'radio':
+            station_id = parts[2]
+            tracks = self.backend.session.get_station_tracks(station_id, self._max_radio_tracks)
+            # create Ref objects
+            refs = []
+            for track in tracks:
+                # some clients request a lookup themself, some don't
+                # we do not want to ask the API for every track twice
+                # we'll fetch some sane information directly from provided object
+                track_id = GMusicSession.get_track_id(track)
+                track_name = GMusicSession.get_ref_name(track)
+                refs.append(Ref.track(uri='gmusic:track:' + track_id,
+                                      name=track_name))
+            return refs
+
+        return []
 
     def lookup(self, uri):
         if uri.startswith('gmusic:track:'):
@@ -24,12 +85,16 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         else:
             return []
 
-    def _lookup_track(self, uri):        
+    def _lookup_track(self, uri):
         is_all_access = uri.startswith('gmusic:track:T')
-        
+
         if is_all_access and self.all_access:
             song = self.backend.session.get_track_info(uri.split(':')[2])
             if song is None:
+                logger.debug('There is no song %r', uri)
+                return []
+            if not 'artistId' in song:
+                logger.debug('Failed to lookup %r', uri)
                 return []
             return [self._aa_to_mopidy_track(song)]
         elif not is_all_access:
@@ -66,7 +131,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             logger.debug('Failed to lookup %r', uri)
             return []
 
-    def _lookup_artist(self, uri):        
+    def _lookup_artist(self, uri):
         sorter = lambda t: (t.album.date,
                             t.album.name,
                             t.disc_no,
@@ -120,7 +185,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                             albums=lib_albums)
 
     def find_exact(self, query=None, uris=None):
-        # Find exact can only be done on gmusic library, 
+        # Find exact can only be done on gmusic library,
         # since one can't filter all access searches
         lib_tracks, lib_artists, lib_albums = self._search_library(query, uris)
 
