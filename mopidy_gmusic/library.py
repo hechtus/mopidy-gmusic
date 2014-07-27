@@ -22,6 +22,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         self.aa_artists = {}
         self.aa_tracks = LruCache()
         self.aa_albums = LruCache()
+        self.genres = {}
         self.all_access = False
         self._show_radio_stations_browse = \
             self.backend.config['gmusic']['show_radio_stations_browse']
@@ -34,6 +35,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         self._root.append(Ref.directory(uri='gmusic:artist', name='Artists'))
         # browsing all tracks results in connection timeouts
         # self._root.append(Ref.directory(uri='gmusic:track', name='Tracks'))
+        self._root.append(Ref.directory(uri='gmusic:genre', name='Genres'))
 
         if self._show_radio_stations_browse:
             self._root.append(Ref.directory(uri='gmusic:radio',
@@ -72,7 +74,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             refs.append(self._album_to_ref(album))
             refs.sort(key=lambda ref: ref.name)
         if len(refs) > 0:
-            refs.insert(0, Ref.directory(uri=uri + ':all', name='All Tracks'))
+            refs.insert(0, Ref.directory(
+                uri=uri + ':tracks',
+                name='All Tracks'))
             return refs
         else:
             # Show all tracks if no album is available
@@ -86,8 +90,37 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             refs.append(self._track_to_ref(track))
         return refs
 
+    def _browse_genres(self, parent_genre_id=None):
+        genres = [genre for genre in self.genres.values()
+                  if parent_genre_id == genre.get('parentId', None)]
+        if len(genres) == 0:
+            # show all tracks when browsing leaf genres
+            return self._browse_genre_tracks(parent_genre_id)
+        refs = []
+        for genre in genres:
+            refs.append(self._genre_to_ref(genre))
+        refs.sort(key=lambda ref: ref.name)
+        if parent_genre_id:
+            refs.insert(0, Ref.directory(
+                uri='gmusic:genre:%s:tracks' % parent_genre_id,
+                name='All Tracks'))
+        return refs
+
+    def _browse_genre_tracks(self, genre_id):
+        if genre_id not in self.genres:
+            logger.warning('There is no genre with id %r', genre_id)
+            return []
+        genre = self.genres[genre_id]
+        refs = []
+        for track in self.tracks.values():
+            if track.genre and (track.genre in genre['name']
+                                or genre['name'] in track.genre):
+                refs.append(self._track_to_ref(track))
+        refs.sort(key=lambda ref: ref.name)
+        return refs
+
     def browse(self, uri):
-        logger.debug('browse: %s', str(uri))
+        logger.debug('browse: %r', uri)
         if not uri:
             return []
         if uri == self.root_directory.uri:
@@ -114,8 +147,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             return self._browse_artist(uri)
 
         # all tracks of a single artist
-        # uri == 'gmusic:artist:artist_id:all'
-        if len(parts) == 4 and parts[1] == 'artist' and parts[3] == 'all':
+        # uri == 'gmusic:artist:artist_id:tracks'
+        if len(parts) == 4 and parts[1] == 'artist' and parts[3] == 'tracks':
             return self._browse_artist_all_tracks(uri)
 
         # all radio stations
@@ -146,6 +179,20 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                 refs.append(Ref.track(uri='gmusic:track:' + track_id,
                                       name=track_name))
             return refs
+
+        # genres
+        if uri == 'gmusic:genre':
+            return self._browse_genres()
+
+        # a single genre
+        # uri == 'gmusic:genre:genre_id'
+        if len(parts) == 3 and parts[1] == 'genre':
+            return self._browse_genres(parts[2])
+
+        # all tracks of a genre
+        # uri == 'gmusic:genre:genre_id:tracks'
+        if len(parts) == 4 and parts[1] == 'genre' and parts[3] == 'tracks':
+            return self._browse_genre_tracks(parts[2])
 
         logger.debug('Unknown uri for browse request: %s', uri)
 
@@ -277,6 +324,13 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             tracks = filter(lambda t: artist in t.artists, tracks)
         return sorted(tracks, key=sorter)
 
+    def _refresh_genres(self, parent_genre_id=None):
+        for genre in self.backend.session.get_genres(parent_genre_id):
+            genre_id = genre['id']
+            self.genres[genre_id] = genre
+            if 'children' in genre:
+                self._refresh_genres(genre_id)
+
     def refresh(self, uri=None):
         self.tracks = {}
         self.albums = {}
@@ -284,6 +338,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         self.aa_artists = {}
         for song in self.backend.session.get_all_songs():
             self._to_mopidy_track(song)
+        if len(self.genres) == 0:
+            self._refresh_genres()
 
     def search(self, query=None, uris=None):
         lib_tracks, lib_artists, lib_albums = self._search_library(query, uris)
@@ -424,6 +480,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             name=song['title'],
             artists=[self._to_mopidy_artist(song)],
             album=self._to_mopidy_album(song),
+            genre=song.get('genre', None),
             track_no=song.get('trackNumber', 1),
             disc_no=song.get('discNumber', 1),
             date=unicode(song.get('year', 0)),
@@ -493,6 +550,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             name=song['title'],
             artists=[artist],
             album=album,
+            genre=song.get('genre', None),
             track_no=song.get('trackNumber', 1),
             disc_no=song.get('discNumber', 1),
             date=album.date,
@@ -611,6 +669,10 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         else:
             name = 'Unknown artist'
         return Ref.directory(uri=artist.uri, name=name)
+
+    def _genre_to_ref(self, genre):
+        return Ref.directory(uri='gmusic:genre:'+genre['id'],
+                             name=genre['name'].replace('/', ', '))
 
     def _track_to_ref(self, track, with_track_no=False):
         if with_track_no and track.track_no > 0:
