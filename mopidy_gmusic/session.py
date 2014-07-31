@@ -156,9 +156,9 @@ class GMusicSession(object):
             try:
                 res = self.api.get_genres(parent_genre_id)
                 try:
-                    if 'genres' not in res:
-                        return []
                     return res['genres']
+                except KeyError:
+                    return []
                 except TypeError:
                     # TODO just return res as soon API #280 is fixed
                     # and released in a new version
