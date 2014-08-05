@@ -29,4 +29,4 @@ class ManagerTest(unittest.TestCase):
         self.assertEqual(session.get_genres(), [])
 
         session.api.get_genres = mock.Mock(side_effect=TestFailure)
-        self.assertIsNone(session.get_genres())
+        self.assertEqual(session.get_genres(), [])
