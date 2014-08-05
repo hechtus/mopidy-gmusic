@@ -495,7 +495,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             album=album,
             track_no=song.get('trackNumber', 1),
             disc_no=song.get('discNumber', 1),
-            date=album.date,
+            date=album.date if album is not None else None,
             length=int(song['durationMillis']),
             bitrate=320)
         self.aa_tracks[uri] = track
