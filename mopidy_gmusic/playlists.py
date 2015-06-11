@@ -47,7 +47,7 @@ class GMusicPlaylistsProvider(backend.PlaylistsProvider):
 
         # add thumbs up playlist
         tracks = []
-        for track in self.backend.session.get_thumbs_up_songs():
+        for track in self.backend.session.get_promoted_songs():
             trackId = None
             if 'trackId' in track:
                 trackId = track['trackId']
@@ -57,8 +57,8 @@ class GMusicPlaylistsProvider(backend.PlaylistsProvider):
                 tracks += self.backend.library.lookup(
                     'gmusic:track:' + trackId)
         if len(tracks) > 0:
-            uri = 'gmusic:playlist:thumbs_up'
-            playlists[uri] = Playlist(uri=uri, name='Thumbs up', tracks=tracks)
+            uri = 'gmusic:playlist:promoted'
+            playlists[uri] = Playlist(uri=uri, name='Promoted', tracks=tracks)
 
         # load user playlists
         for playlist in self.backend.session.get_all_user_playlist_contents():
