@@ -66,9 +66,9 @@ class GMusicSession(object):
         else:
             return {}
 
-    def get_thumbs_up_songs(self):
+    def get_promoted_songs(self):
         if self.api.is_authenticated():
-            return self.api.get_thumbs_up_songs()
+            return self.api.get_promoted_songs()
         else:
             return {}
 
