@@ -150,3 +150,23 @@ class GMusicSession(object):
     def increment_song_playcount(self, song_id, plays=1, playtime=None):
         if self.api.is_authenticated():
             return self.api.increment_song_playcount(song_id, plays, playtime)
+
+    def get_genres(self, parent_genre_id=None):
+        if self.api.is_authenticated():
+            try:
+                res = self.api.get_genres(parent_genre_id)
+                try:
+                    return res['genres']
+                except KeyError:
+                    return []
+                except TypeError:
+                    # TODO just return res as soon API #280 is fixed
+                    # and released in a new version
+                    logger.warning('Google Music API was updated and #280 was'
+                                   + ' released. Remove redundant this code!')
+                    return res
+            except CallFailure as error:
+                logger.error(u'Failed to get genres: %s', error)
+                return []
+        else:
+            return []
