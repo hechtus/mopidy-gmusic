@@ -33,8 +33,8 @@ class GMusicBackend(
             config['gmusic']['refresh_playlists'] * 60.0
         self._refresh_library_timer = None
         self._refresh_playlists_timer = None
+        self._library_loaded = False
         self._refresh_lock = Lock()
-        self._refresh_last = 0
         # do not run playlist refresh around library refresh
         self._refresh_threshold = self._refresh_playlists_rate * 0.3
 
@@ -85,27 +85,13 @@ class GMusicBackend(
             self.playlists.refresh()
             t = round(time.time()) - t0
             logger.info('Finished refreshing Google Music content in %ds', t)
-            self._refresh_last = t0
+            self._library_loaded = True
 
     def _refresh_playlists(self):
-        if not self._refresh_lock.acquire(False):
-            # skip, if library is already loading
-            logger.debug('Skip refresh playlist: library refresh is running.')
-            return
+        if not self._library_loaded:
+            logger.debug('Playlist refresh requries library to be loaded')
+        self._refresh_lock.acquire(True)
         t0 = round(time.time())
-        if 0 < self._refresh_library_rate \
-             < self._refresh_threshold + t0 - self._refresh_last:
-            # skip, upcoming library refresh
-            logger.debug('Skip refresh playlist: ' +
-                         'library refresh is around the corner')
-            self._refresh_lock.release()
-            return
-        if self._refresh_last > t0 - self._refresh_threshold:
-            # skip, library was just updated
-            logger.debug('Skip refresh playlist: ' +
-                         'library just finished')
-            self._refresh_lock.release()
-            return
         logger.info('Start refreshing Google Music playlists')
         self.playlists.refresh()
         t = round(time.time()) - t0
