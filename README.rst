@@ -149,6 +149,13 @@ Credits
 Changelog
 =========
 
+v1.0.1 (2016-03-30)
+-------------------
+
+- Require gmusicapi >= 7.0.1.
+- Add I-feel-lucky playlists. (as fixed in 971f948bdc8f8f8e943933357815b90a303bdff1
+  for simon-weber/gmusicapi#365)
+
 v1.0.0 (2015-10-23)
 -------------------
 
