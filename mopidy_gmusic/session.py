@@ -7,6 +7,8 @@ import gmusicapi
 
 import requests
 
+from service import GMusicService
+
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ class GMusicSession(object):
     def __init__(self, all_access, api=None):
         self.all_access = all_access
         if api is None:
-            self.api = gmusicapi.Mobileclient()
+            self.api = GMusicService()
         else:
             self.api = api
 
@@ -55,7 +57,7 @@ class GMusicSession(object):
             self.api.logout()
 
         if device_id is None:
-            device_id = gmusicapi.Mobileclient.FROM_MAC_ADDRESS
+            device_id = self.api.FROM_MAC_ADDRESS
 
         authenticated = self.api.login(username, password, device_id)
 
@@ -114,7 +116,7 @@ class GMusicSession(object):
 
     @endpoint(default=None, require_all_access=True)
     def search_all_access(self, query, max_results=50):
-        return self.api.search_all_access(query, max_results=max_results)
+        return self.api.search(query, max_results=max_results)
 
     @endpoint(default=list)
     def get_all_stations(self):
