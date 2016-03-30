@@ -115,8 +115,17 @@ class GMusicSession(object):
             max_rel_artist=max_rel_artist)
 
     @endpoint(default=None, require_all_access=True)
-    def search_all_access(self, query, max_results=50):
-        return self.api.search(query, max_results=max_results)
+    def search_all_access(self, query, max_results=50, field=None):
+        results = self.api.search(query, max_results=max_results)
+        if field:
+            return self.filter_search_results_by_field(results, field)
+        return results
+
+    def filter_search_results_by_field(self, results, field):
+        for search_result_type in self.api.SEARCH_RESULT_TYPES:
+            if search_result_type != field:
+                results['{}_hits'.format(search_result_type)] = []
+        return results
 
     @endpoint(default=list)
     def get_all_stations(self):

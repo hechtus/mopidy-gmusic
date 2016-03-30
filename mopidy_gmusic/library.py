@@ -337,7 +337,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                     'Searching Google Play Music All Access for: %s',
                     values[0])
                 res = self.backend.session.search_all_access(
-                    values[0], max_results=50)
+                    values[0], max_results=50, field=field)
                 if res is None:
                     return [], [], []
 

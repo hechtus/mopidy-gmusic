@@ -5,6 +5,9 @@ class GMusicService(Mobileclient):
     ''' Subclass of gmusicapi's Mobileclient for reimplementing some features
     in ways more appropriate for its use in mopidy-gmusic. '''
 
+    SEARCH_RESULT_TYPES = ['album', 'artist', 'playlist', 'station', 'song',
+                           'situation', 'video']
+
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
         self.superclass = super(GMusicService, self)
         self.superclass.__init__(debug_logging,
