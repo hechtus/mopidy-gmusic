@@ -23,16 +23,3 @@ class GMusicService(Mobileclient):
                                                     query,
                                                     max_results=max_results)
         return results
-
-    def add_store_track(self, store_song_id):
-        ''' Allow backwards compatibility for gmusicapi <= 9.0.
-        add_aa_track() was renamed in gmusicapi
-        3abdfcc2d2e47a567697953dde00ad382721a15e '''
-        # TODO: solely use search as soon as gmusicapi in its AUR is updated.
-        try:
-            library_track_id = self.superclass.add_store_track(self,
-                                                               store_song_id)
-        except AttributeError:
-            library_track_id = self.superclass.add_aa_track(self,
-                                                            store_song_id)
-        return library_track_id
