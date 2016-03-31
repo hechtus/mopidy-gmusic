@@ -1,12 +1,13 @@
 from gmusicapi import Mobileclient
 
+SEARCH_RESULT_TYPES = ['album', 'artist', 'playlist', 'station', 'song',
+                       'situation', 'video']
+IFL_STATION_DICT = {'id': 'IFL', 'name': 'I\'m Feeling Lucky'}
+
 
 class GMusicService(Mobileclient):
-    ''' Subclass of gmusicapi's Mobileclient for reimplementing some features
-    in ways more appropriate for its use in mopidy-gmusic. '''
-
-    SEARCH_RESULT_TYPES = ['album', 'artist', 'playlist', 'station', 'song',
-                           'situation', 'video']
+    """ Subclass of gmusicapi's Mobileclient for reimplementing some features
+    in ways more appropriate for its use in mopidy-gmusic. """
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
         self.superclass = super(GMusicService, self)
@@ -15,9 +16,9 @@ class GMusicService(Mobileclient):
                                  verify_ssl)
 
     def search(self, query, max_results=50):
-        ''' Allow backwards compatibility for gmusicapi <= 9.0.
+        """ Allow backwards compatibility for gmusicapi <= 9.0.
         search() was renamed in gmusicapi
-        4419d0e10812d5b8861d0fafb45b74e8a1b63f27 '''
+        4419d0e10812d5b8861d0fafb45b74e8a1b63f27 """
         # TODO: solely use search as soon as gmusicapi in its AUR is updated.
         try:
             results = self.superclass.search(query, max_results=max_results)

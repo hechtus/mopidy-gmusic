@@ -7,7 +7,7 @@ import gmusicapi
 
 import requests
 
-from service import GMusicService
+import service
 
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class GMusicSession(object):
     def __init__(self, all_access, api=None):
         self.all_access = all_access
         if api is None:
-            self.api = GMusicService()
+            self.api = service.GMusicService()
         else:
             self.api = api
 
@@ -115,14 +115,14 @@ class GMusicSession(object):
             max_rel_artist=max_rel_artist)
 
     @endpoint(default=None, require_all_access=True)
-    def search_all_access(self, query, max_results=50, field=None):
+    def search_all_access(self, query, max_results=150, field=None):
         results = self.api.search(query, max_results=max_results)
         if field:
             return self.filter_search_results_by_field(results, field)
         return results
 
     def filter_search_results_by_field(self, results, field):
-        for search_result_type in self.api.SEARCH_RESULT_TYPES:
+        for search_result_type in service.SEARCH_RESULT_TYPES:
             if search_result_type != field:
                 results['{}_hits'.format(search_result_type)] = []
         return results
@@ -138,7 +138,7 @@ class GMusicSession(object):
         stations.reverse()
 
         # Add IFL radio on top
-        stations.insert(0, {'id': 'IFL', 'name': 'I\'m Feeling Lucky'})
+        stations.insert(0, service.IFL_STATION_DICT)
 
         if num_stations is not None and num_stations > 0:
             # Limit radio stations
