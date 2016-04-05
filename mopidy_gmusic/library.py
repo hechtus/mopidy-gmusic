@@ -331,29 +331,92 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
             # Since gmusic does not support search filters, just search for the
             # first 'searchable' filter
-            if field in [
-                    'track_name', 'album', 'artist', 'albumartist', 'any']:
+            if field in ['track_name', 'album', 'artist', 'albumartist',
+                         'any']:
                 logger.info(
                     'Searching Google Play Music All Access for: %s',
                     values[0])
-                res = self.backend.session.search_all_access(
+                results = self.backend.session.search_all_access(
                     values[0], max_results=50, field=field)
-                if res is None:
+                results = self.filter_search_results(results, query)
+                if results is None:
                     return [], [], []
 
                 albums = [
-                    self._aa_search_album_to_mopidy_album(album_res)
-                    for album_res in res['album_hits']]
+                    self._aa_search_album_to_mopidy_album(album_results)
+                    for album_results in results['album_hits']]
                 artists = [
-                    self._aa_search_artist_to_mopidy_artist(artist_res)
-                    for artist_res in res['artist_hits']]
+                    self._aa_search_artist_to_mopidy_artist(artist_results)
+                    for artist_results in results['artist_hits']]
                 tracks = [
-                    self._aa_search_track_to_mopidy_track(track_res)
-                    for track_res in res['song_hits']]
+                    self._aa_search_track_to_mopidy_track(track_results)
+                    for track_results in results['song_hits']]
 
                 return tracks, artists, albums
 
         return [], [], []
+
+    def filter_search_results(self, search_results, query):
+        '''Filter the `search_results` using the criterions given in `query`.
+        - Multiple criterions are combined using AND.
+        - Search is case insensitive
+        - Fuzzy search is disabled
+          (exact strings must appear in the queried fields)'''
+        for key, results in search_results.items():
+            # `results[:]` is used to iterate over a copy of results. This is
+            # necessary for the later removal of elements:
+            for result in results[:]:
+                if self.is_query_missing_from_search_result(result, key,
+                                                            query):
+                    results.remove(result)
+        return search_results
+
+    def get_result_key_from_search_results_key(self, key):
+        result_key = key.replace('_hits', '')
+        if result_key == 'song':
+            return 'track'
+
+        return result_key
+
+    def is_query_missing_from_search_result(self, result, key, query):
+        result_key = self.get_result_key_from_search_results_key(key)
+        musical_work = result[result_key]
+
+        for musical_work_type, value in query.items():
+            is_missing = True
+            fields = self.determine_google_music_fields(result_key,
+                                                        musical_work_type)
+            # a list with a single element is provided. Thus, unpack it:
+            value = value[0].lower()
+
+            for field in fields:
+                try:
+                    if value in musical_work[field].lower():
+                        is_missing = False
+                        break
+                except KeyError:
+                    pass
+
+            if is_missing:
+                return True
+        return False
+
+    def determine_google_music_fields(self, result_key, field):
+        if field and field != 'any':
+            special_cases = ['artist', 'playlist']
+
+            if field in special_cases and field == result_key:
+                return ['name']
+
+            # field can be `track_name` and field can be `track`:
+            elif field == 'track_name':
+                return ['title']
+
+            else:
+                return [field]
+        else:
+            return ['name', 'artist', 'album', 'albumArtist', 'title',
+                    'year']
 
     def _search_library(self, query=None, uris=None):
         if query is None:
