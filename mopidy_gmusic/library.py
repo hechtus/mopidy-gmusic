@@ -408,7 +408,6 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             if field in special_cases and field == result_key:
                 return ['name']
 
-            # field can be `track_name` and field can be `track`:
             elif field == 'track_name':
                 return ['title']
 
