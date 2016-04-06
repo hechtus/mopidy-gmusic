@@ -363,12 +363,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         - Fuzzy search is disabled
           (exact strings must appear in the queried fields)'''
         for key, results in search_results.items():
-            # `results[:]` is used to iterate over a copy of results. This is
-            # necessary for the later removal of elements:
-            for result in results[:]:
-                if self.is_query_missing_from_search_result(result, key,
-                                                            query):
-                    results.remove(result)
+            results[:] = [result for result in results if
+                          self.is_query_in_search_result(result, key, query)]
         return search_results
 
     def get_result_key_from_search_results_key(self, key):
@@ -378,12 +374,12 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
         return result_key
 
-    def is_query_missing_from_search_result(self, result, key, query):
+    def is_query_in_search_result(self, result, key, query):
         result_key = self.get_result_key_from_search_results_key(key)
         musical_work = result[result_key]
 
         for musical_work_type, value in query.items():
-            is_missing = True
+            is_in_search_result = False
             fields = self.determine_google_music_fields(result_key,
                                                         musical_work_type)
             # a list with a single element is provided. Thus, unpack it:
@@ -392,14 +388,14 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             for field in fields:
                 try:
                     if value in musical_work[field].lower():
-                        is_missing = False
+                        is_in_search_result = True
                         break
                 except KeyError:
                     pass
 
-            if is_missing:
-                return True
-        return False
+            if not is_in_search_result:
+                return False
+        return True
 
     def determine_google_music_fields(self, result_key, field):
         if field and field != 'any':
