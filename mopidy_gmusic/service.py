@@ -19,7 +19,6 @@ class GMusicService(Mobileclient):
         """ Allow backwards compatibility for gmusicapi <= 9.0.
         search() was renamed in gmusicapi
         4419d0e10812d5b8861d0fafb45b74e8a1b63f27 """
-        # TODO: solely use search as soon as gmusicapi in its AUR is updated.
         try:
             results = self.superclass.search(query, max_results=max_results)
         except AttributeError:
