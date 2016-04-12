@@ -18,7 +18,6 @@ class GMusicPlaybackProvider(backend.PlaybackProvider):
     def translate_uri(self, uri):
         track_id = uri.rsplit(':')[-1]
 
-        # TODO Support medium and low bitrate
         quality = BITRATES[self.backend.config['gmusic']['bitrate']]
         stream_uri = self.backend.session.get_stream_url(
             track_id, quality=quality)

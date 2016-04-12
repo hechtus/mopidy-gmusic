@@ -82,11 +82,11 @@ All Access subscribers may enable All Access integration by adding this line::
     [gmusic]
     all_access = true
 
-By default, the bitrate is set to 160 kbps. You can change this to either 128
-or 320 kbps by setting::
+By default, the bitrate is set to 320 kbps. You can change this to either 128
+or 160 kbps by setting::
 
     [gmusic]
-    bitrate = 320
+    bitrate = 160
 
 All Access radios are available as browsable content or playlist. The following
 are the default config values::
@@ -148,6 +148,15 @@ Credits
 
 Changelog
 =========
+
+v1.0.1 (2016-04-06)
+-------------------
+
+- Require gmusicapi >= 7.0.1.
+- Add I-feel-lucky playlists to radios.
+- Filter search results according to used search fields.
+- Default bitrate to 320 kbps in accordance with
+  [gmusicapi#319](https://github.com/simon-weber/gmusicapi/pull/319).
 
 v1.0.0 (2015-10-23)
 -------------------

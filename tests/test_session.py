@@ -8,19 +8,20 @@ import pytest
 
 import requests
 
+from mopidy_gmusic import service
 from mopidy_gmusic import session as session_lib
 
 
 @pytest.fixture
 def offline_session():
-    api_mock = mock.Mock(spec=gmusicapi.Mobileclient)
+    api_mock = mock.Mock(spec=service.GMusicService)
     api_mock.is_authenticated.return_value = False
     return session_lib.GMusicSession(all_access=True, api=api_mock)
 
 
 @pytest.fixture
 def online_session():
-    api_mock = mock.Mock(spec=gmusicapi.Mobileclient)
+    api_mock = mock.Mock(spec=service.GMusicService)
     api_mock.is_authenticated.return_value = True
     return session_lib.GMusicSession(all_access=True, api=api_mock)
 
@@ -222,7 +223,7 @@ class TestSearchAllAccess(object):
     def test_when_online(self, online_session):
         online_session.api.search_all_access.return_value = mock.sentinel.rv
 
-        result = online_session.search_all_access('abba', max_results=10)
+        result = online_session.api.search_all_access('abba', max_results=10)
 
         assert result is mock.sentinel.rv
         online_session.api.search_all_access.assert_called_once_with(
@@ -239,8 +240,22 @@ class TestSearchAllAccess(object):
 
 class TestGetAllStations(object):
 
+    @classmethod
+    def setup_class(self):
+        session = online_session()
+
+        # This is a constant. Thus it does not matter whether we use online
+        # or offline_session:
+        self.stations = [{'id': 'Test', 'name': 'First test station'},
+                         {'id': 'Test2', 'name': 'Second test station'}]
+
+        # Silce the stations list for passing by value (otherwise, stations
+        # will contain imFeelingLuckyStation as well):
+        session.api.get_all_stations.return_value = self.stations[:]
+        self.radio_stations = session.get_radio_stations()
+
     def test_when_offline(self, offline_session):
-        assert offline_session.get_all_stations() == []
+        assert offline_session.get_all_stations() == [service.IFL_STATION_DICT]
 
     def test_when_online(self, online_session):
         online_session.api.get_all_stations.return_value = mock.sentinel.rv
@@ -248,6 +263,16 @@ class TestGetAllStations(object):
         assert online_session.get_all_stations() is mock.sentinel.rv
 
         online_session.api.get_all_stations.assert_called_once_with()
+
+    def test_when_online_ifl_is_first_radio_station(self, online_session):
+        assert self.radio_stations[0] == service.IFL_STATION_DICT
+
+    def test_when_online_retrieves_radio_stations(self, online_session):
+        stations = self.stations[:]
+        stations.insert(0, service.IFL_STATION_DICT)
+
+        for station in stations:
+            assert station in self.radio_stations
 
 
 class TestGetStationTracks(object):

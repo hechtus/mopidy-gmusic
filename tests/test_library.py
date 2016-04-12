@@ -1,6 +1,10 @@
 import unittest
 
+from mopidy.backend import models
+
 from mopidy_gmusic import actor as backend_lib
+
+from mopidy_gmusic import service
 
 from tests.test_extension import ExtensionTest
 
@@ -71,7 +75,12 @@ class LibraryTest(unittest.TestCase):
         refs = self.backend.library.browse('gmusic:radio')
         # tests should be unable to fetch stations :(
         self.assertIsNotNone(refs)
-        self.assertEqual(refs, [])
+
+        # TODO: What method needs to be invoked to create this Ref object
+        # automatically from service.IFL_STATION_DICT?
+        iflStation = models.Ref(name="I'm Feeling Lucky", type='directory',
+                                uri='gmusic:radio:IFL')
+        self.assertEqual(refs, [iflStation])
 
     def test_browse_station(self):
         refs = self.backend.library.browse('gmusic:radio:invalid_stations_id')
@@ -89,7 +98,7 @@ class LibraryTest(unittest.TestCase):
         self.assertEqual(refs, [])
 
     def test_lookup_invalid_artist(self):
-        refs = self.backend.library.lookup('gmusic:artis:invalid_uri')
+        refs = self.backend.library.lookup('gmusic:artist:invalid_uri')
         # tests should be unable to fetch any content :(
         self.assertEqual(refs, [])
 
@@ -97,3 +106,46 @@ class LibraryTest(unittest.TestCase):
         refs = self.backend.library.lookup('gmusic:track:invalid_uri')
         # tests should be unable to fetch any content :(
         self.assertEqual(refs, [])
+
+    def test_no_fuzzy_search(self):
+        artistToBeFound = {'artist': {'name': 'easteregg'}}
+        artistToBeIgnored = {'artist': {'name': 'easter egg'}}
+        artistToBeFound = {'artist': {'name': 'easteregg'}}
+        query = {'artist': [artistToBeFound['artist']['name']]}
+
+        search_results = self.createEmptySearchResults()
+        search_results['artist_hits'] = [artistToBeFound, artistToBeIgnored]
+
+        expectedResult = self.createEmptySearchResults()
+        expectedResult['artist_hits'] = [artistToBeFound]
+
+        result = self.backend.library.filter_search_results(
+                search_results, query)
+        assert result == expectedResult
+
+    def test_filter_search_results_by_field(self):
+        trackToBeFound = {'track': {'title': 'easteregg',
+                                    'artist': 'Doublebass',
+                                    'album': 'Unreleased',
+                                    'album_artist': 'Doublebass'}}
+        trackToBeIgnored = {'track': {'title': 'Frimaire',
+                                      'artist': 'easteregg',
+                                      'album': 'Ferne',
+                                      'album_artist': 'easteregg'}}
+        query = {'track_name': [trackToBeFound['track']['title']]}
+
+        search_results = self.createEmptySearchResults()
+        search_results['song_hits'] = [trackToBeFound, trackToBeIgnored]
+
+        expectedResult = self.createEmptySearchResults()
+        expectedResult['song_hits'] = [trackToBeFound]
+
+        result = self.backend.library.filter_search_results(
+                search_results, query)
+        assert result == expectedResult
+
+    def createEmptySearchResults(self):
+        search_results = {}
+        for search_result_type in service.SEARCH_RESULT_TYPES:
+            search_results['{}_hits'.format(search_result_type)] = []
+        return search_results
