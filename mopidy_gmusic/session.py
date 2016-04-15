@@ -129,7 +129,8 @@ class GMusicSession(object):
         stations.reverse()
 
         # Add IFL radio on top
-        stations.insert(0, self.IFL_STATION_DICT)
+        if self.api.is_authenticated():
+            stations.insert(0, self.IFL_STATION_DICT)
 
         if num_stations is not None and num_stations > 0:
             # Limit radio stations

@@ -73,11 +73,8 @@ class LibraryTest(unittest.TestCase):
 
     def test_browse_radio(self):
         refs = self.backend.library.browse('gmusic:radio')
-
-        ifl_id, ifl_name = session_lib.GMusicSession.IFL_STATION_DICT.values()
-        ifl_uri = 'gmusic:radio:{0}'.format(ifl_id)
-        ifl_station = models.Ref(name=ifl_name, type='directory', uri=ifl_uri)
-        self.assertEqual(refs, [ifl_station])
+        # tests should be unable to fetch stations :(
+        self.assertEqual(refs, [])
 
     def test_browse_station(self):
         refs = self.backend.library.browse('gmusic:radio:invalid_stations_id')

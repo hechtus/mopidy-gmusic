@@ -249,7 +249,7 @@ class TestGetAllStations(object):
         self.ifl_station_dict = session_lib.GMusicSession.IFL_STATION_DICT
 
     def test_when_offline(self, offline_session):
-        assert offline_session.get_all_stations() == [self.ifl_station_dict]
+        assert offline_session.get_all_stations() == []
 
     def test_when_online(self, online_session):
         online_session.api.get_all_stations.return_value = mock.sentinel.rv
