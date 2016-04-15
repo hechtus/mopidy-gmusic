@@ -1,6 +1,10 @@
 import unittest
 
+from mopidy.backend import models
+
 from mopidy_gmusic import actor as backend_lib
+
+from mopidy_gmusic import session as session_lib
 
 from tests.test_extension import ExtensionTest
 
@@ -69,9 +73,11 @@ class LibraryTest(unittest.TestCase):
 
     def test_browse_radio(self):
         refs = self.backend.library.browse('gmusic:radio')
-        # tests should be unable to fetch stations :(
-        self.assertIsNotNone(refs)
-        self.assertEqual(refs, [])
+
+        ifl_id, ifl_name = session_lib.GMusicSession.IFL_STATION_DICT.values()
+        ifl_uri = 'gmusic:radio:{0}'.format(ifl_id)
+        ifl_station = models.Ref(name=ifl_name, type='directory', uri=ifl_uri)
+        self.assertEqual(refs, [ifl_station])
 
     def test_browse_station(self):
         refs = self.backend.library.browse('gmusic:radio:invalid_stations_id')
@@ -89,7 +95,7 @@ class LibraryTest(unittest.TestCase):
         self.assertEqual(refs, [])
 
     def test_lookup_invalid_artist(self):
-        refs = self.backend.library.lookup('gmusic:artis:invalid_uri')
+        refs = self.backend.library.lookup('gmusic:artist:invalid_uri')
         # tests should be unable to fetch any content :(
         self.assertEqual(refs, [])
 

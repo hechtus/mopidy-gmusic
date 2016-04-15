@@ -43,6 +43,8 @@ def endpoint(default=None, require_all_access=False):
 
 class GMusicSession(object):
 
+    IFL_STATION_DICT = {'id': 'IFL', 'name': "I'm Feeling Lucky"}
+
     def __init__(self, all_access, api=None):
         self.all_access = all_access
         if api is None:
@@ -127,7 +129,7 @@ class GMusicSession(object):
         stations.reverse()
 
         # Add IFL radio on top
-        stations.insert(0, {'id': 'IFL', 'name': 'I\'m Feeling Lucky'})
+        stations.insert(0, self.IFL_STATION_DICT)
 
         if num_stations is not None and num_stations > 0:
             # Limit radio stations
