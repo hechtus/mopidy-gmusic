@@ -435,7 +435,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             disc_no=song.get('discNumber', 1),
             date=unicode(song.get('year', 0)),
             length=int(song['durationMillis']),
-            bitrate=320)
+            bitrate=self.backend.config['gmusic']['bitrate'])
         self.tracks[uri] = track
         return track
 
@@ -504,7 +504,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             disc_no=song.get('discNumber', 1),
             date=album.date,
             length=int(song['durationMillis']),
-            bitrate=320)
+            bitrate=self.backend.config['gmusic']['bitrate'])
         self.aa_tracks[uri] = track
         return track
 
@@ -567,7 +567,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             disc_no=track.get('discNumber', 1),
             date=unicode(track.get('year', 0)),
             length=int(track['durationMillis']),
-            bitrate=320)
+            bitrate=self.backend.config['gmusic']['bitrate'])
 
     def _aa_search_artist_to_mopidy_artist(self, search_artist):
         artist = search_artist['artist']
