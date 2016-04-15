@@ -239,6 +239,15 @@ class TestSearchAllAccess(object):
 
 class TestGetAllStations(object):
 
+    @classmethod
+    def setup_class(self):
+        session = online_session()
+        self.stations = [{'id': 'Test', 'name': 'First test station'},
+                         {'id': 'Test2', 'name': 'Second test station'}]
+        session.api.get_all_stations.return_value = self.stations
+        self.radio_stations = session.get_radio_stations()
+        self.ifl_station_dict = session_lib.GMusicSession.IFL_STATION_DICT
+
     def test_when_offline(self, offline_session):
         assert offline_session.get_all_stations() == []
 
@@ -248,6 +257,16 @@ class TestGetAllStations(object):
         assert online_session.get_all_stations() is mock.sentinel.rv
 
         online_session.api.get_all_stations.assert_called_once_with()
+
+    def test_when_online_ifl_is_first_radio_station(self, online_session):
+        assert self.radio_stations[0] == self.ifl_station_dict
+
+    def test_when_online_retrieves_radio_stations(self, online_session):
+        stations = self.stations[:]
+        stations.insert(0, self.ifl_station_dict)
+
+        for station in stations:
+            assert station in self.radio_stations
 
 
 class TestGetStationTracks(object):
