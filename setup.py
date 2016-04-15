@@ -27,7 +27,7 @@ setup(
         'setuptools',
         'Mopidy >= 1.0',
         'Pykka >= 1.1',
-        'gmusicapi >= 6.0',
+        'gmusicapi >= 7.0.1',
         'requests >= 2.0',
     ],
     entry_points={
