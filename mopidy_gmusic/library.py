@@ -24,6 +24,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         self.aa_artists = LRUCache(1024)
         self.aa_tracks = LRUCache(1024)
         self.aa_albums = LRUCache(1024)
+        self.aa_album_tracks = LRUCache(1024)
         self._radio_stations_in_browse = (
             self.backend.config['gmusic']['radio_stations_in_browse'])
         self._radio_stations_count = (
@@ -67,6 +68,18 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         self.aa_albums[album.uri] = album
         for artist in album.artists:
             self.cache_artist(artist)
+
+    def cache_album_tracks(self, album, tracks):
+        """Cache tracks for a given album.
+
+        Arguments:
+        album -- a mopidy album to cache tracks for
+        tracks -- a list of mopidy tracks for the album
+        """
+        self.aa_album_tracks[album.uri] = tracks
+        self.cache_album(album)
+        for track in tracks:
+            self.cache_track(track)
 
     def cache_artist(self, artist):
         """Cache an artist and related information.
@@ -230,7 +243,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
     def _lookup_album(self, uri):
         is_all_access = uri.startswith('gmusic:album:B')
         if self.all_access and is_all_access:
-            tracks = self.aa_albums.get(uri)
+            tracks = self.aa_album_tracks.get(uri)
             if tracks:
                 return tracks
             album = self.backend.session.get_album_info(
@@ -240,7 +253,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                 return []
             tracks = [
                 self._aa_to_mopidy_track(track) for track in album['tracks']]
-            self.aa_albums[uri] = tracks
+            self.cache_album_tracks(self._to_mopidy_album(album), tracks)
             return sorted(tracks, key=lambda t: (t.disc_no,
                                                  t.track_no))
         elif not is_all_access:
