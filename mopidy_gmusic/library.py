@@ -489,7 +489,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             track_no=song.get('trackNumber', 1),
             disc_no=song.get('discNumber', 1),
             date=unicode(song.get('year', 0)),
-            length=int(song['durationMillis']),
+            length=int(song.get('durationMillis', 0)),
             bitrate=320)
         self.tracks[uri] = track
         return track
@@ -557,7 +557,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             track_no=song.get('trackNumber', 1),
             disc_no=song.get('discNumber', 1),
             date=album.date,
-            length=int(song['durationMillis']),
+            length=int(song.get('durationMillis', 0)),
             bitrate=320)
         self.cache_track(track)
         return track
@@ -625,7 +625,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             track_no=track.get('trackNumber', 1),
             disc_no=track.get('discNumber', 1),
             date=unicode(track.get('year', 0)),
-            length=int(track['durationMillis']),
+            length=int(track.get('durationMillis', 0)),
             bitrate=320)
 
         self.cache_track(track)
