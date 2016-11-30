@@ -495,16 +495,28 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         track_id = song.get('id', song.get('nid'))
         if track_id is None:
             raise ValueError
-        return Track(
-            uri='gmusic:track:' + track_id,
-            name=song['title'],
-            artists=[self._to_mopidy_artist(song)],
-            album=self._to_mopidy_album(song),
-            track_no=song.get('trackNumber', 1),
-            disc_no=song.get('discNumber', 1),
-            date=unicode(song.get('year', 0)),
-            length=int(song['durationMillis']),
-            bitrate=320)
+        try:
+            return Track(
+               uri='gmusic:track:' + track_id,
+               name=song['title'],
+               artists=[self._to_mopidy_artist(song)],
+               album=self._to_mopidy_album(song),
+               track_no=song.get('trackNumber', 1),
+               disc_no=song.get('discNumber', 1),
+               date=unicode(song.get('year', 0)),
+               length=int(song['durationMillis']),
+               bitrate=320)
+        except KeyError:
+           return Track(
+               uri='gmusic:track:' + track_id,
+               name='Unknown',
+               artists=[self._to_mopidy_artist(song)],
+               album=self._to_mopidy_album(song),
+               track_no=song.get('trackNumber', 1),
+               disc_no=song.get('discNumber', 1),
+               date=unicode(song.get('year', 0)),
+               length=0,
+               bitrate=320)
 
     def _to_mopidy_album(self, song):
         name = song.get('album', '')
