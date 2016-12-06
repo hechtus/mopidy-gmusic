@@ -47,8 +47,8 @@ class GMusicPlaylistsProvider(backend.PlaylistsProvider):
             mopidy_track = self.backend.library._to_mopidy_track(track)
             library_tracks[track['id']] = mopidy_track
 
-        # add "Thumbs up" playlist... It appears that gmusic api's 
-        #get_promoted_songs == Thumbs up playlist 
+        # add "Thumbs up" playlist... It appears that gmusic api's
+        # get_promoted_songs == Thumbs up playlist
         tracks = []
         for track in self.backend.session.get_promoted_songs():
             tracks.append(self.backend.library._to_mopidy_track(track))
