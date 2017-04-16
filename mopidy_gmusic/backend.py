@@ -51,6 +51,42 @@ class GMusicBackend(
                            self.config['gmusic']['password'],
                            self.config['gmusic']['deviceid'])
 
+        # If no device ID was specified, we need to try and get one
+        # (if possible).
+        if self.config['gmusic']['deviceid'] is None:
+            devices = self.session.api.get_registered_devices()
+            devices.sort(key=lambda item: item['lastAccessedTimeMs'],
+                         reverse=True)
+
+            dev_ids = []
+            for device in devices:
+                dev_id = device['id']
+                # Android devices ID starts with 0x, and iOS device
+                # IDs start with ios:, so we need to chop them off.
+                if dev_id.startswith('0x'):
+                    dev_id = dev_id[2:]
+                elif dev_id.startswith('ios:'):
+                    dev_id = dev_id[4:]
+                else:
+                    continue
+
+                dev_ids.append(dev_id)
+
+                logger.info("GMusic Device %s, Type: %s, ID: %s",
+                            device['friendlyName'], device['type'], dev_id)
+
+            # If we found any device IDs, we select the first one. We
+            # previously sorted by the last accessed time, so this
+            # will be the most recently used.
+            if len(dev_ids) > 0:
+                self.session.logout()
+                logger.info("Using device ID %s for GMusic login", dev_ids[0])
+                self.session.login(self.config['gmusic']['username'],
+                                   self.config['gmusic']['password'],
+                                   dev_ids[0])
+            else:
+                logger.warn('No valid GMusic device IDs found')
+
         # wait a few seconds to let mopidy settle
         # then refresh google music content asynchronously
         self._refresh_library_timer = RepeatingTimer(
