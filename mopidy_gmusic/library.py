@@ -23,7 +23,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         # in our library.
         self.tracks = {}
         self.albums = {}
+        self.albums2 = {}
         self.artists = {}
+        self.artists2 = {}
 
         # aa_* caches are *only* used for temporary objects. Library
         # objects will never make it here.
@@ -55,10 +57,10 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
     def _browse_tracks(self):
         tracks = list(self.tracks.values())
-        tracks.sort(key=lambda ref: ref.name)
         refs = []
+        tracks = sorted(tracks,key=lambda t: (t.name))
         for track in tracks:
-            refs.append(track_to_ref(track))
+            refs.append(track_to_ref(track, False))
         return refs
 
     def _browse_albums(self):
@@ -71,7 +73,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
     def _browse_album(self, uri):
         refs = []
         for track in self._lookup_album(uri):
-            refs.append(track_to_ref(track, True))
+            refs.append(track_to_ref(track, False))
         return refs
 
     def _browse_artists(self):
@@ -96,7 +98,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
     def _browse_artist_all_tracks(self, uri):
         artist_uri = ':'.join(uri.split(':')[:3])
         refs = []
-        tracks = self._lookup_artist(artist_uri, True)
+        tracks = self._lookup_artist(artist_uri, False)
         for track in tracks:
             refs.append(track_to_ref(track))
         return refs
@@ -233,7 +235,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         # up here (as a fallback) because purchased tracks can have a
         # store ID, but only show up in your library.
         try:
-            album = self.albums[uri]
+            album = self.albums2[uri]
         except KeyError:
             logger.debug('Failed to lookup %r', uri)
             return []
@@ -297,7 +299,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             except KeyError:
                 pass
         try:
-            artist = self.artists[uri]
+            artist = self.artists2[uri]
         except KeyError:
             logger.debug('Failed to lookup %r', uri)
             return []
@@ -311,14 +313,30 @@ class GMusicLibraryProvider(backend.LibraryProvider):
     def refresh(self, uri=None):
         self.tracks = {}
         self.albums = {}
+        self.albums2 = {}
         self.artists = {}
+        self.artists2 = {}
 
         album_tracks = {}
         for track in self.backend.session.get_all_songs():
+            
             mopidy_track = self._to_mopidy_track(track)
 
             self.tracks[mopidy_track.uri] = mopidy_track
-            self.albums[mopidy_track.album.uri] = mopidy_track.album
+
+#           Need another albums list that will store all albumIds so they can be referenced in the browsing later
+#           Problem caused by Google assigning multiple albumIds for the same album
+
+            self.albums2[mopidy_track.album.uri] = mopidy_track.album
+            album_found = False
+            if len(self.albums) > 0:
+                for album_chk in self.albums.values():
+                    if album_chk.name == mopidy_track.album.name:
+                        album_found = True
+                if not album_found:
+                    self.albums[mopidy_track.album.uri] = mopidy_track.album
+            else:
+                self.albums[mopidy_track.album.uri] = mopidy_track.album
 
             # We don't care about the order because we're just using
             # this as a temporary variable to grab the proper album
@@ -328,8 +346,10 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
             album_tracks[mopidy_track.album.uri].append(mopidy_track)
 
+
         # Yes, this is awful. No, I don't have a better solution. Yes,
         # I'm annoyed at Google for not providing album artist IDs.
+
         for album in self.albums.values():
             artist_found = False
             for album_artist in album.artists:
@@ -337,11 +357,37 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                     for artist in track.artists:
                         if album_artist.name == artist.name:
                             artist_found = True
-                            self.artists[artist.uri] = artist
+
+#                           Check to see if the artist exists in the 
+#                           self.artist list already, if it does, do not add it again. 
+#                           Problem is caused by Google assigning multiple
+#                           artistIDs to the same artist name.
+#                           Duplicates are stored in self.artists2
+
+                            artist_found_2 = False
+                            if len(self.artists) > 0:
+                                for artist_chk in self.artists.values():
+                                    if artist_chk.name == artist.name:
+                                        artist_found_2 = True
+                                if not artist_found_2:
+                                    self.artists[artist.uri] = artist
+                            else:
+                                self.artists[artist.uri] = artist
+
+                            self.artists2[artist.uri] = artist
 
             if not artist_found:
                 for artist in album.artists:
-                    self.artists[artist.uri] = artist
+                    artist_found_2 = False
+                    if len(self.artists) > 0:
+                        for artist_chk in self.artists.values():
+                            if artist_chk.name == artist.name:
+                                artist_found_2 = True
+                        if not artist_found_2:
+                            self.artists[artist.uri] = artist
+                    else:
+                        self.artists[artist.uri] = artist
+                    self.artists2[artist.uri] = artist
 
     def search(self, query=None, uris=None, exact=False):
         if exact:
