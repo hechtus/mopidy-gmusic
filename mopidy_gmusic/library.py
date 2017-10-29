@@ -23,9 +23,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         # in our library.
         self.tracks = {}
         self.albums = {}
-        self.albums2 = {}
+        self.albums_ungrouped = {}
         self.artists = {}
-        self.artists2 = {}
+        self.artists_ungrouped = {}
 
         # aa_* caches are *only* used for temporary objects. Library
         # objects will never make it here.
@@ -235,7 +235,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         # up here (as a fallback) because purchased tracks can have a
         # store ID, but only show up in your library.
         try:
-            album = self.albums2[uri]
+            album = self.albums_ungrouped[uri]
         except KeyError:
             logger.debug('Failed to lookup %r', uri)
             return []
@@ -299,7 +299,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             except KeyError:
                 pass
         try:
-            artist = self.artists2[uri]
+            artist = self.artists_ungrouped[uri]
         except KeyError:
             logger.debug('Failed to lookup %r', uri)
             return []
@@ -313,9 +313,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
     def refresh(self, uri=None):
         self.tracks = {}
         self.albums = {}
-        self.albums2 = {}
+        self.albums_ungrouped = {}
         self.artists = {}
-        self.artists2 = {}
+        self.artists_ungrouped = {}
 
         album_tracks = {}
         for track in self.backend.session.get_all_songs():
@@ -327,15 +327,15 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 #           Need another albums list that will store all albumIds so they can be referenced in the browsing later
 #           Problem caused by Google assigning multiple albumIds for the same album
 
-            self.albums2[mopidy_track.album.uri] = mopidy_track.album
+            self.albums_ungrouped[mopidy_track.album.uri] = mopidy_track.album
             album_found = False
-            if len(self.albums) > 0:
-                for album_chk in self.albums.values():
-                    if album_chk.name == mopidy_track.album.name:
-                        album_found = True
-                if not album_found:
-                    self.albums[mopidy_track.album.uri] = mopidy_track.album
-            else:
+            current_artist_name = track.get('albumArtist', '')
+#            import pdb; pdb.set_trace()
+            for album_chk in self.albums.values():
+                chk_artist_name = [artist.name for artist in album_chk.artists]
+                if album_chk.name == mopidy_track.album.name and current_artist_name == chk_artist_name[0]:
+                    album_found = True
+            if not album_found:
                 self.albums[mopidy_track.album.uri] = mopidy_track.album
 
             # We don't care about the order because we're just using
@@ -362,32 +362,26 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 #                           self.artist list already, if it does, do not add it again. 
 #                           Problem is caused by Google assigning multiple
 #                           artistIDs to the same artist name.
-#                           Duplicates are stored in self.artists2
+#                           Duplicates are stored in self.artists_ungrouped
 
                             artist_found_2 = False
-                            if len(self.artists) > 0:
-                                for artist_chk in self.artists.values():
-                                    if artist_chk.name == artist.name:
-                                        artist_found_2 = True
-                                if not artist_found_2:
-                                    self.artists[artist.uri] = artist
-                            else:
+                            for artist_chk in self.artists.values():
+                                if artist_chk.name == artist.name:
+                                    artist_found_2 = True
+                            if not artist_found_2:
                                 self.artists[artist.uri] = artist
 
-                            self.artists2[artist.uri] = artist
+                            self.artists_ungrouped[artist.uri] = artist
 
             if not artist_found:
                 for artist in album.artists:
                     artist_found_2 = False
-                    if len(self.artists) > 0:
-                        for artist_chk in self.artists.values():
-                            if artist_chk.name == artist.name:
-                                artist_found_2 = True
-                        if not artist_found_2:
-                            self.artists[artist.uri] = artist
-                    else:
+                    for artist_chk in self.artists.values():
+                        if artist_chk.name == artist.name:
+                            artist_found_2 = True
+                    if not artist_found_2:
                         self.artists[artist.uri] = artist
-                    self.artists2[artist.uri] = artist
+                    self.artists_ungrouped[artist.uri] = artist
 
     def search(self, query=None, uris=None, exact=False):
         if exact:
