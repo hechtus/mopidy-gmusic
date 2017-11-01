@@ -321,12 +321,11 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         for track in self.backend.session.get_all_songs():
             
             mopidy_track = self._to_mopidy_track(track)
-
             self.tracks[mopidy_track.uri] = mopidy_track
-
+        
 #           Need another albums list that will store all albumIds so they can be referenced in the browsing later
 #           Problem caused by Google assigning multiple albumIds for the same album
-
+    
             self.albums_ungrouped[mopidy_track.album.uri] = mopidy_track.album
             album_found = False
             current_artist_name = track.get('albumArtist', '')
@@ -336,13 +335,13 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                     album_found = True
             if not album_found:
                 self.albums[mopidy_track.album.uri] = mopidy_track.album
-
+    
             # We don't care about the order because we're just using
             # this as a temporary variable to grab the proper album
             # artist out of the album.
             if mopidy_track.album.uri not in album_tracks:
                 album_tracks[mopidy_track.album.uri] = []
-
+    
             album_tracks[mopidy_track.album.uri].append(mopidy_track)
 
 
@@ -459,8 +458,6 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             for value in values:
                 if field == 'track_no':
                     q = self._convert_to_int(value)
-                elif field == 'artist' or field == "albumartist":
-                    q = value.strip()
                 else:
                     q = value.strip().lower()
 
@@ -473,14 +470,17 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                 def album_filter(track):
                     return q in getattr(track, 'album', Album()).name.lower()
 
+#               Reason we have to use startswith in search is because if you filter by artist Air for example, you could get Jefferson 
+#               Airplane back if you search any part of the string. Same if you seach for Abba, you could get Black Sabbath back.
+#               This is based on experience :)
                 def artist_filter(track):
                     return (
-                        any(q in a.name for a in track.artists) or
-                        albumartist_filter(track))
+                           any(a.name.lower().startswith(q) for a in track.artists) or
+                           albumartist_filter(track))
 
                 def albumartist_filter(track):
                     album_artists = getattr(track, 'album', Album()).artists
-                    return any(q in a.name for a in album_artists)
+                    return (any(a.name.lower().startswith(q) for a in album_artists))
 
                 def track_no_filter(track):
                     return track.track_no == q
