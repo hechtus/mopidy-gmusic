@@ -321,15 +321,15 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         for track in self.backend.session.get_all_songs():
             mopidy_track = self._to_mopidy_track(track)
             self.tracks[mopidy_track.uri] = mopidy_track
-#           Need another albums list that will store all albumIds so they can be 
-#           referenced in the browsing later. Problem caused by Google assigning 
-#           multiple albumIds for the same album
+#           Need another albums list that will store all albumIds so they can
+#           be referenced in the browsing later. Problem caused by Google
+#           assigning multiple albumIds for the same album
             self.albums_ungrouped[mopidy_track.album.uri] = mopidy_track.album
             album_found = False
             current_artist_name = track.get('albumArtist', '')
             for album_chk in self.albums.values():
                 chk_artist_name = [artist.name for artist in album_chk.artists]
-                if album_chk.name == mopidy_track.album.name and 
+                if album_chk.name == mopidy_track.album.name and \
                    current_artist_name == chk_artist_name[0]:
                     album_found = True
             if not album_found:
@@ -343,7 +343,6 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
             album_tracks[mopidy_track.album.uri].append(mopidy_track)
 
-
         # Yes, this is awful. No, I don't have a better solution. Yes,
         # I'm annoyed at Google for not providing album artist IDs.
 
@@ -355,8 +354,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                         if album_artist.name == artist.name:
                             artist_found = True
 
-#                           Check to see if the artist exists in the 
-#                           self.artist list already, if it does, do not add it again. 
+#                           Check to see if the artist exists in the
+#                           self.artist list already, if it does, do not add it again.
 #                           Problem is caused by Google assigning multiple
 #                           artistIDs to the same artist name.
 #                           Duplicates are stored in self.artists_ungrouped
@@ -469,19 +468,20 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                 def album_filter(track):
                     return q in getattr(track, 'album', Album()).name.lower()
 
-#               Reason we have to use startswith in search is because if you 
-#               filter by artist Air for example, you could get Jefferson 
-#               Airplane back if you search any part of the string. 
+#               Reason we have to use startswith in search is because if you
+#               filter by artist Air for example, you could get Jefferson
+#               Airplane back if you search any part of the string.
 #               Same if you seach for Abba, you could get Black Sabbath back.
 #               This is based on experience :)
                 def artist_filter(track):
                     return (
-                           any(a.name.lower().startswith(q) for a in track.artists) or
-                           albumartist_filter(track))
+                    any(a.name.lower().startswith(q) for a in track.artists) or
+                        albumartist_filter(track))
 
                 def albumartist_filter(track):
                     album_artists = getattr(track, 'album', Album()).artists
-                    return (any(a.name.lower().startswith(q) for a in album_artists))
+                    return (any(a.name.lower().startswith(q) 
+                            for a in album_artists))
 
                 def track_no_filter(track):
                     return track.track_no == q
