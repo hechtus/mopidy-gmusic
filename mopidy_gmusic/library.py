@@ -58,7 +58,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
     def _browse_tracks(self):
         tracks = list(self.tracks.values())
         refs = []
-        tracks = sorted(tracks,key=lambda t: (t.name))
+        tracks = sorted(tracks, key=lambda t: (t.name))
         for track in tracks:
             refs.append(track_to_ref(track, False))
         return refs
@@ -319,19 +319,18 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
         album_tracks = {}
         for track in self.backend.session.get_all_songs():
-            
             mopidy_track = self._to_mopidy_track(track)
             self.tracks[mopidy_track.uri] = mopidy_track
-        
-#           Need another albums list that will store all albumIds so they can be referenced in the browsing later
-#           Problem caused by Google assigning multiple albumIds for the same album
-    
+#           Need another albums list that will store all albumIds so they can be 
+#           referenced in the browsing later. Problem caused by Google assigning 
+#           multiple albumIds for the same album
             self.albums_ungrouped[mopidy_track.album.uri] = mopidy_track.album
             album_found = False
             current_artist_name = track.get('albumArtist', '')
             for album_chk in self.albums.values():
                 chk_artist_name = [artist.name for artist in album_chk.artists]
-                if album_chk.name == mopidy_track.album.name and current_artist_name == chk_artist_name[0]:
+                if album_chk.name == mopidy_track.album.name and 
+                   current_artist_name == chk_artist_name[0]:
                     album_found = True
             if not album_found:
                 self.albums[mopidy_track.album.uri] = mopidy_track.album
@@ -341,7 +340,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             # artist out of the album.
             if mopidy_track.album.uri not in album_tracks:
                 album_tracks[mopidy_track.album.uri] = []
-    
+
             album_tracks[mopidy_track.album.uri].append(mopidy_track)
 
 
@@ -470,8 +469,10 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                 def album_filter(track):
                     return q in getattr(track, 'album', Album()).name.lower()
 
-#               Reason we have to use startswith in search is because if you filter by artist Air for example, you could get Jefferson 
-#               Airplane back if you search any part of the string. Same if you seach for Abba, you could get Black Sabbath back.
+#               Reason we have to use startswith in search is because if you 
+#               filter by artist Air for example, you could get Jefferson 
+#               Airplane back if you search any part of the string. 
+#               Same if you seach for Abba, you could get Black Sabbath back.
 #               This is based on experience :)
                 def artist_filter(track):
                     return (
