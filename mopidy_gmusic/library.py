@@ -475,8 +475,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 #               This is based on experience :)
                 def artist_filter(track):
                     return (any(a.name.lower().startswith(q)
-                    for a in track.artists)
-                    or albumartist_filter(track))
+                            for a in track.artists)
+                        or albumartist_filter(track))
 
                 def albumartist_filter(track):
                     album_artists = getattr(track, 'album', Album()).artists
