@@ -355,7 +355,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                             artist_found = True
 
 #                           Check to see if the artist exists in the
-#                           self.artist list already, if it does, do not add it #                           again. Problem is caused by Google assigning 
+#                           self.artist list already, if it does, do not add it
+#                           again. Problem is caused by Google assigning 
 #                           multiple artistIDs to the same artist name.
 #                           Duplicates are stored in self.artists_ungrouped
 
@@ -473,8 +474,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 #               Same if you seach for Abba, you could get Black Sabbath back.
 #               This is based on experience :)
                 def artist_filter(track):
-                    return (
-                    any(a.name.lower().startswith(q) for a in track.artists) \
+                    return (any(a.name.lower().startswith(q)
+                       for a in track.artists)
                        or albumartist_filter(track))
 
                 def albumartist_filter(track):
