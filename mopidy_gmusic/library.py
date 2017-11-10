@@ -334,7 +334,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                     album_found = True
             if not album_found:
                 self.albums[mopidy_track.album.uri] = mopidy_track.album
-    
+
             # We don't care about the order because we're just using
             # this as a temporary variable to grab the proper album
             # artist out of the album.
@@ -355,9 +355,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                             artist_found = True
 
 #                           Check to see if the artist exists in the
-#                           self.artist list already, if it does, do not add it again.
-#                           Problem is caused by Google assigning multiple
-#                           artistIDs to the same artist name.
+#                           self.artist list already, if it does, do not add it #                           again. Problem is caused by Google assigning 
+#                           multiple artistIDs to the same artist name.
 #                           Duplicates are stored in self.artists_ungrouped
 
                             artist_found_2 = False
@@ -475,8 +474,8 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 #               This is based on experience :)
                 def artist_filter(track):
                     return (
-                    any(a.name.lower().startswith(q) for a in track.artists) or
-                        albumartist_filter(track))
+                    any(a.name.lower().startswith(q) for a in track.artists) \
+                       or albumartist_filter(track))
 
                 def albumartist_filter(track):
                     album_artists = getattr(track, 'album', Album()).artists
