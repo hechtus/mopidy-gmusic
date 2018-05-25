@@ -88,6 +88,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             refs.sort(key=lambda ref: ref.name)
         if len(refs) > 0:
             refs.insert(0, Ref.directory(uri=uri + ':all', name='All Tracks'))
+            refs.insert(1, Ref.directory(uri=uri + ':top', name='Top Tracks'))
             return refs
         else:
             # Show all tracks if no album is available
@@ -97,6 +98,14 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         artist_uri = ':'.join(uri.split(':')[:3])
         refs = []
         tracks = self._lookup_artist(artist_uri, True)
+        for track in tracks:
+            refs.append(track_to_ref(track))
+        return refs
+
+    def _browse_artist_top_tracks(self, uri):
+        artist_uri = ':'.join(uri.split(':')[:3])
+        refs = []
+        tracks = self._get_artist_top_tracks(artist_uri)
         for track in tracks:
             refs.append(track_to_ref(track))
         return refs
@@ -159,6 +168,11 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         # uri == 'gmusic:artist:artist_id:all'
         if len(parts) == 4 and parts[1] == 'artist' and parts[3] == 'all':
             return self._browse_artist_all_tracks(uri)
+
+        # top tracks of a single artist
+        # uri == 'gmusic:artist:artist_id:top'
+        if len(parts) == 4 and parts[1] == 'artist' and parts[3] == 'top':
+            return self._browse_artist_top_tracks(uri)
 
         # all radio stations
         if uri == 'gmusic:radio':
@@ -243,6 +257,25 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                  artist=[artist.name for artist in album.artists],
                  date=album.date)).tracks
         return sorted(tracks, key=lambda t: (t.disc_no, t.track_no))
+
+    def _get_artist_top_tracks(self, uri):
+        is_all_access = uri.startswith('gmusic:artist:A')
+        artist_id = uri.split(':')[2]
+
+        if not is_all_access:
+            logger.debug("Top Tracks not available for non-all-access artists")
+            return []
+
+        artist_info = self.backend.session.get_artist_info(artist_id,
+                                                            include_albums=False,
+                                                            max_top_tracks=10,
+                                                            max_rel_artist=0)
+        top_tracks = []
+
+        for track_dict in artist_info['topTracks']:
+            top_tracks.append(self._to_mopidy_track(track_dict))
+
+        return top_tracks
 
     def _get_artist_albums(self, uri):
         is_all_access = uri.startswith('gmusic:artist:A')
