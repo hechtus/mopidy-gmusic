@@ -38,6 +38,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         self._radio_tracks_count = (
             self.backend.config['gmusic']['radio_tracks_count'])
 
+        self._top_tracks_count = (
+            self.backend.config['gmusic']['top_tracks_count'])
+
         # Setup the root of library browsing.
         self._root = [
             Ref.directory(uri='gmusic:album', name='Albums'),
@@ -268,7 +271,7 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
         artist_info = self.backend.session.get_artist_info(artist_id,
                                                             include_albums=False,
-                                                            max_top_tracks=10,
+                                                            max_top_tracks=self._top_tracks_count,
                                                             max_rel_artist=0)
         top_tracks = []
 

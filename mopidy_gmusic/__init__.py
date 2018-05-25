@@ -39,6 +39,8 @@ class GMusicExtension(ext.Extension):
             minimum=1, optional=True)
         schema['radio_tracks_count'] = config.Integer(minimum=1, optional=True)
 
+        schema['top_tracks_count'] = config.Integer(minimum=1, optional=True)
+
         return schema
 
     def setup(self, registry):
