@@ -77,25 +77,19 @@ are the default config values::
     # Limit the number or tracks for each radio station
     radio_tracks_count = 25
 
-Google Play Music requires all clients to provide a device ID. By default,
-Mopidy-GMusic will use your system's MAC address as the device ID. As Google
-`puts some limits <https://support.google.com/googleplay/answer/3139562>`_ on
-how many different devices you can associate with an account, you might want to
-control what device ID is used. You can set the ``gmusic/deviceid`` config to
-e.g. the device ID from your phone where you also use Google Play Music::
+Google Play Music requires all clients to provide a device ID. In the past,
+mopidy-gmusic generated one automatically from your MAC address, but Google 
+seems to have changed their API in a way that prevents this from working.
+Therefore you will need to configure one manually.
+If no device ID is configured, mopidy-gmusic will output a list of registered
+devices and their IDs. You can either use one of those IDs in your config file,
+or use the special value `mac` if you want gmusicapi to use the old method of
+generating an ID from your MAC address.::
 
     [gmusic]
     deviceid = 0123456789abcdef
-
-The Android device ID is a 16 character long string identifying the Android
-device registered for Google Play Music, excluding the ``0x`` prefix. You can
-obtain this ID by dialing ``*#*#8255#*#*`` on your phone (see the aid) or using
-this `app <https://play.google.com/store/apps/details?id=com.evozi.deviceid>`_
-(see the Google Service Framework ID Key).
-
-On iOS the device ID is an UUID with the ``ios:`` prefix included. (TODO:
-Include instructions on how to retrieve this.)
-
+    # or
+    deviceid = mac
 
 Usage
 =====

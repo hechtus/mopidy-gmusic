@@ -5,7 +5,7 @@ import time
 
 from threading import Lock
 
-from mopidy import backend
+from mopidy import backend, exceptions
 
 import pykka
 
@@ -52,18 +52,18 @@ class GMusicBackend(
                            self.config['gmusic']['deviceid'])
 
         if not self.config['gmusic']['deviceid']:
-            logger.warn('There is no gmusic deviceid set. '
-                        'Falling back to the MAC address of this device. '
-                        'Registered devices are listed below.')
+            logger.error('There is no gmusic deviceid set. '
+                         'Registered devices are listed below.')
             for device in self.session.api.get_registered_devices():
                 deviceid = device['id']
                 if deviceid.startswith('ios:'):
                     deviceid = deviceid[4:]
                 elif deviceid.startswith('0x'):
                     deviceid = deviceid[2:]
-                logger.info('Name: %s, ID: %s',
+                logger.error('Name: %s, ID: %s',
                             device.get('friendlyName', 'Unknown Device'),
                             deviceid)
+            raise exceptions.BackendError("No deviceid configured")
 
         # wait a few seconds to let mopidy settle
         # then refresh google music content asynchronously
