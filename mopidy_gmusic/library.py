@@ -270,9 +270,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             return []
 
         artist_info = self.backend.session.get_artist_info(artist_id,
-                                                            include_albums=False,
-                                                            max_top_tracks=self._top_tracks_count,
-                                                            max_rel_artist=0)
+                                                           include_albums=False,
+                                                           max_top_tracks=self._top_tracks_count,
+                                                           max_rel_artist=0)
         top_tracks = []
 
         for track_dict in artist_info['topTracks']:
