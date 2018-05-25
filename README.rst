@@ -89,9 +89,7 @@ e.g. the device ID from your phone where you also use Google Play Music::
 
 The Android device ID is a 16 character long string identifying the Android
 device registered for Google Play Music, excluding the ``0x`` prefix. You can
-obtain this ID by dialing ``*#*#8255#*#*`` on your phone (see the aid) or using
-this `app <https://play.google.com/store/apps/details?id=com.evozi.deviceid>`_
-(see the Google Service Framework ID Key).
+obtain this ID by dialing ``*#*#8255#*#*`` on your phone (see the aid).
 
 On iOS the device ID is an UUID with the ``ios:`` prefix included. (TODO:
 Include instructions on how to retrieve this.)
