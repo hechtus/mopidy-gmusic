@@ -91,7 +91,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             refs.sort(key=lambda ref: ref.name)
         if len(refs) > 0:
             refs.insert(0, Ref.directory(uri=uri + ':all', name='All Tracks'))
-            refs.insert(1, Ref.directory(uri=uri + ':top', name='Top Tracks'))
+            is_all_access = uri.startswith('gmusic:artist:A')
+            if is_all_access:
+                refs.insert(1, Ref.directory(uri=uri + ':top', name='Top Tracks'))
             return refs
         else:
             # Show all tracks if no album is available
