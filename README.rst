@@ -39,18 +39,33 @@ Install the Mopidy-GMusic extension by running::
 Configuration
 =============
 
-Before starting Mopidy, you must add your Google username and password to your
-Mopidy configuration file::
+Before starting Mopidy, you must add your Google username, password and device
+ID to your Mopidy configuration file::
 
     [gmusic]
     username = alice
     password = secret
+    deviceid = 0123456789abcdef
 
 If you use 2-step verification to access your Google account, which you should,
 you must create an application password in your Google account for
 Mopidy-GMusic. See Google's docs on `how to make an app password
 <https://support.google.com/accounts/answer/185833>`_ if you're not already
 familiar with this.
+
+Google Play Music now requires all clients to provide a device ID. In the past,
+mopidy-gmusic generated one automatically from your MAC address, but Google
+seems to have changed their API in a way that prevents this from working.
+Therefore you will need to configure one manually.
+If no device ID is configured, mopidy-gmusic will output a list of registered
+devices and their IDs. You can either use one of those IDs in your config file,
+or use the special value `mac` if you want gmusicapi to use the old method of
+generating an ID from your MAC address.::
+
+    [gmusic]
+    deviceid = 0123456789abcdef
+    # or
+    deviceid = mac
 
 By default, All Access will be enabled automatically if you subscribe. You may
 force enable or disable it by using the all_access option::
@@ -77,19 +92,6 @@ are the default config values::
     # Limit the number or tracks for each radio station
     radio_tracks_count = 25
 
-Google Play Music requires all clients to provide a device ID. In the past,
-mopidy-gmusic generated one automatically from your MAC address, but Google 
-seems to have changed their API in a way that prevents this from working.
-Therefore you will need to configure one manually.
-If no device ID is configured, mopidy-gmusic will output a list of registered
-devices and their IDs. You can either use one of those IDs in your config file,
-or use the special value `mac` if you want gmusicapi to use the old method of
-generating an ID from your MAC address.::
-
-    [gmusic]
-    deviceid = 0123456789abcdef
-    # or
-    deviceid = mac
 
 Usage
 =====
