@@ -207,20 +207,22 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
     def get_distinct(self, field, query=None):
         logger.debug(f"get_distinct: {field}")
+
+        res = self.search(query)
         if field == "artist" or field == "albumartist":
             return [
                 artist.name if artist.name else "Unknown Artist"
-                for artist in self.artists.values()
+                for artist in res.artists
             ]
         elif field == "album":
             return [
                 album.name if album.name else "Unknown Album"
-                for album in self.albums.values()
+                for album in res.albums
             ]
         elif field == "track" or field == "track_name":
             return [
                 track.name if track.name else "Unknown Track"
-                for track in self.tracks.values()
+                for track in res.tracks
             ]
         return []
 
