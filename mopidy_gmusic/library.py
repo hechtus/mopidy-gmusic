@@ -205,6 +205,19 @@ class GMusicLibraryProvider(backend.LibraryProvider):
 
         return []
 
+    def get_distinct(self, field, query=None):
+        logger.debug(f"get_distinct: {field}")
+        if field == 'artist' or field == 'albumartist':
+            return [artist.name if artist.name else "Unknown Artist"
+                    for artist in self.artists.values()]
+        elif field == 'album':
+            return [album.name if album.name else "Unknown Album"
+                    for album in self.albums.values()]
+        elif field == 'track':
+            return [track.name if track.name else "Unknown Track"
+                    for track in self.tracks.values()]
+        return []
+
     def lookup(self, uri):
         if uri.startswith("gmusic:track:"):
             return self._lookup_track(uri)
