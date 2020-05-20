@@ -345,9 +345,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                 track.track_no,
             )
 
-        if self.all_access:
+        if self.all_access and uri.startswith("gmusic:artist:A"):
             try:
-                all_access_id = self.aa_artists[uri.split(":")[2]]
+                all_access_id = uri.split(":")[2]
                 artist_infos = self.backend.session.get_artist_info(
                     all_access_id, max_top_tracks=0, max_rel_artist=0
                 )
@@ -466,7 +466,6 @@ class GMusicLibraryProvider(backend.LibraryProvider):
                 res = self.backend.session.search(values[0], max_results=50)
                 if res is None:
                     return [], [], []
-
                 albums = [
                     self._aa_search_album_to_mopidy_album(album_res)
                     for album_res in res["album_hits"]
@@ -599,6 +598,11 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         date = str(song.get("year", 0))
 
         album_id = create_id(f"{artist.name}|{name}|{date}")
+        try:
+            if self.all_access:
+                album_id = song["albumId"]
+        except KeyError:
+            pass
 
         uri = "gmusic:album:" + album_id
         return Album(
@@ -613,6 +617,10 @@ class GMusicLibraryProvider(backend.LibraryProvider):
     def _to_mopidy_artist(self, song):
         name = song.get("artist", "")
         artist_id = create_id(name)
+        try:
+            artist_id = song["artistId"][0]
+        except KeyError:
+            pass
         uri = "gmusic:artist:" + artist_id
         return Artist(uri=uri, name=name)
 
@@ -629,6 +637,9 @@ class GMusicLibraryProvider(backend.LibraryProvider):
         aa_artist_id = create_id(track["artist"])
         if "artistId" in track:
             aa_artist_id = track["artistId"][0]
+            # Fix for https://github.com/simon-weber/gmusicapi/issues/666
+            if not aa_artist_id.startswith("A"):
+                aa_artist_id = "A" + aa_artist_id
         else:
             logger.warning("No artistId for Track %r", track)
 
@@ -636,8 +647,13 @@ class GMusicLibraryProvider(backend.LibraryProvider):
             uri="gmusic:artist:" + aa_artist_id, name=track["artist"]
         )
 
+        #Fix for https://github.com/simon-weber/gmusicapi/issues/666
+        aa_album_id = track["albumId"]
+        if not aa_album_id.startswith("B"):
+            aa_album_id = "B" + aa_album_id
+
         album = Album(
-            uri="gmusic:album:" + track["albumId"],
+            uri="gmusic:album:" + aa_album_id,
             name=track["album"],
             artists=[artist],
             date=str(track.get("year", 0)),
